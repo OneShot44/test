@@ -1,14 +1,14 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 200, 0, 100)
+Frame.Size = UDim2.new(0, 220, 0, 100)
 Frame.Position = UDim2.new(0, 50, 0, 50)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.BorderSizePixel = 0
@@ -41,32 +41,20 @@ local function findStars(parent)
     return stars
 end
 
--- Função para mover suavemente
-local function moveToPart(part, duration)
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp and part then
-        local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = part.CFrame + Vector3.new(0,3,0)})
-        tween:Play()
-        tween.Completed:Wait()
-    end
-end
-
--- Loop principal
-spawn(function()
-    while true do
-        if AutoCollect and LocalPlayer.Character then
-            local stars = findStars(workspace)
-            for _, star in pairs(stars) do
-                if star:IsA("BasePart") then
-                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - star.Position).Magnitude
-                    local time = math.clamp(distance/16, 0.5, 2) -- ajusta a velocidade natural
-                    moveToPart(star, time)
-                    wait(math.random(3,6)/10) -- delay aleatório
+-- Loop principal para coletar usando RemoteEvent
+RunService.RenderStepped:Connect(function()
+    if AutoCollect then
+        local stars = findStars(workspace)
+        for _, star in pairs(stars) do
+            if star and star:IsA("BasePart") then
+                -- Substitua "CollectStarEvent" pelo nome correto do RemoteEvent do seu jogo
+                local collectEvent = ReplicatedStorage:FindFirstChild("CollectStarEvent")
+                if collectEvent then
+                    collectEvent:FireServer(star)
+                    wait(math.random(3,7)/10) -- delay aleatório para parecer humano
                 end
             end
         end
-        wait(0.5)
     end
 end)
 
