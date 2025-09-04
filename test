@@ -1,10 +1,8 @@
--- Configuração da GUI
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 
--- Criando a GUI
+-- GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -23,40 +21,39 @@ ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.Text = "Start Auto-Star"
 ToggleButton.Parent = Frame
 
--- Variável de controle
 local AutoCollect = false
 
--- Função para pegar todas as estrelas
-local function getStars()
+-- Função para procurar todas as estrelas recursivamente
+local function findStars(parent)
     local stars = {}
-    for _, star in pairs(workspace:GetChildren()) do
-        if star.Name:lower():find("star") then
-            table.insert(stars, star)
+    for _, obj in pairs(parent:GetChildren()) do
+        if obj:IsA("BasePart") and obj.Name:lower():find("star") then
+            table.insert(stars, obj)
+        elseif obj:IsA("Model") and obj.PrimaryPart and obj.Name:lower():find("star") then
+            table.insert(stars, obj.PrimaryPart)
+        end
+        local inner = findStars(obj)
+        for _, v in pairs(inner) do
+            table.insert(stars, v)
         end
     end
     return stars
 end
 
--- Loop principal de coleta
+-- Loop de teleporte ultra rápido
 RunService.RenderStepped:Connect(function()
-    if AutoCollect then
-        local stars = getStars()
+    if AutoCollect and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local stars = findStars(workspace)
         for _, star in pairs(stars) do
             if star and star:IsA("BasePart") then
-                -- Teleporta o personagem no centro da estrela
-                LocalPlayer.Character:WaitForChild("HumanoidRootPart").CFrame = star.CFrame + Vector3.new(0, 3, 0)
-                wait(0.2) -- pequena pausa pra coletar
+                LocalPlayer.Character.HumanoidRootPart.CFrame = star.CFrame + Vector3.new(0, 3, 0)
             end
         end
     end
 end)
 
--- Botão de ligar/desligar
+-- Botão ligar/desligar
 ToggleButton.MouseButton1Click:Connect(function()
     AutoCollect = not AutoCollect
-    if AutoCollect then
-        ToggleButton.Text = "Stop Auto-Star"
-    else
-        ToggleButton.Text = "Start Auto-Star"
-    end
+    ToggleButton.Text = AutoCollect and "Stop Auto-Star" or "Start Auto-Star"
 end)
