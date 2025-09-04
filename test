@@ -1,71 +1,60 @@
+--// Serviços
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Mouse = LocalPlayer:GetMouse()
 
--- GUI simples
+--// Configurações
+local teleportPosition = Vector3.new(0, 10, 0) -- coloque aqui suas coordenadas
+local teleportInterval = 30 -- em segundos
+
+--// Interface
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Name = "TeleportGUI"
+ScreenGui.Parent = game.CoreGui
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 220, 0, 60)
-Frame.Position = UDim2.new(0, 50, 0, 50)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.Size = UDim2.new(0, 300, 0, 150)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -75)
+Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
 
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(1, -10, 0, 40)
-ToggleButton.Position = UDim2.new(0, 5, 0, 10)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Text = "Start Max-Star"
-ToggleButton.Parent = Frame
+-- Botão de fechar
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 5)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+CloseButton.Parent = Frame
 
-local AutoCollect = false
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
 
--- Função para encontrar todas as estrelas
-local function findStars(parent)
-    local stars = {}
-    for _, obj in pairs(parent:GetChildren()) do
-        if obj:IsA("BasePart") and obj.Name:lower():find("star") then
-            table.insert(stars, obj)
-        elseif obj:IsA("Model") and obj.PrimaryPart and obj.Name:lower():find("star") then
-            table.insert(stars, obj.PrimaryPart)
-        end
-        local inner = findStars(obj)
-        for _, v in pairs(inner) do
-            table.insert(stars, v)
-        end
-    end
-    return stars
-end
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -40, 0, 30)
+Title.Position = UDim2.new(0, 5, 0, 5)
+Title.Text = "Teleport Script"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 20
+Title.Parent = Frame
 
--- Função para teletransportar e coletar
-local function collectAllStars()
-    local character = LocalPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-    local hrp = character.HumanoidRootPart
-
-    local stars = findStars(workspace)
-    for _, star in pairs(stars) do
-        if star and star:IsA("BasePart") then
-            hrp.CFrame = star.CFrame + Vector3.new(0,3,0) -- Teleporta acima da estrela
-            wait(0.01) -- Espera mínima para coletar
-        end
+--// Função de teleport
+local function TeleportPlayer()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(teleportPosition)
     end
 end
 
--- Botão ligar/desligar
-ToggleButton.MouseButton1Click:Connect(function()
-    AutoCollect = not AutoCollect
-    ToggleButton.Text = AutoCollect and "Stop Max-Star" or "Start Max-Star"
-
-    if AutoCollect then
-        spawn(function()
-            while AutoCollect do
-                collectAllStars()
-                wait(0.05) -- loop super rápido
-            end
-        end)
+--// Loop de teleport a cada intervalo
+spawn(function()
+    while ScreenGui.Parent do
+        TeleportPlayer()
+        wait(teleportInterval)
     end
 end)
