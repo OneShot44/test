@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -23,7 +23,7 @@ ToggleButton.Parent = Frame
 
 local AutoCollect = false
 
--- Função para encontrar estrelas
+-- Função para encontrar todas as estrelas
 local function findStars(parent)
     local stars = {}
     for _, obj in pairs(parent:GetChildren()) do
@@ -40,26 +40,32 @@ local function findStars(parent)
     return stars
 end
 
--- Função para coletar uma estrela via RemoteEvent
-local function collectStar(star)
-    if star then
-        -- Substitua "CollectStarEvent" pelo RemoteEvent real do seu jogo
-        local collectEvent = ReplicatedStorage:FindFirstChild("CollectStarEvent")
-        if collectEvent then
-            collectEvent:FireServer(star)
+-- Função para mover o personagem naturalmente até uma estrela
+local function moveToStar(star)
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("Humanoid") and star then
+        local humanoid = character.Humanoid
+        humanoid:MoveTo(star.Position)
+        -- Espera até chegar próximo da estrela ou timeout
+        local reached = false
+        local timeout = tick() + 5
+        humanoid.MoveToFinished:Wait()
+        while (character.HumanoidRootPart.Position - star.Position).Magnitude > 3 do
+            if tick() > timeout then break end
+            wait(0.1)
         end
     end
 end
 
--- Loop semi-automático seguro
+-- Loop principal semi-automático
 spawn(function()
     while true do
         if AutoCollect then
             local stars = findStars(workspace)
             if #stars > 0 then
                 local star = stars[math.random(1,#stars)] -- escolhe aleatória
-                collectStar(star)
-                wait(math.random(5,12)/10) -- delay aleatório para parecer humano
+                moveToStar(star)
+                wait(math.random(3,7)/10) -- delay aleatório após coletar
             end
         end
         wait(0.5)
