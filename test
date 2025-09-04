@@ -13,15 +13,31 @@ Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
 
+-- Botão fechar "X"
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 25, 0, 25)
+CloseButton.Position = UDim2.new(1, -30, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Text = "X"
+CloseButton.Parent = Frame
+
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(1, -10, 0, 50)
-ToggleButton.Position = UDim2.new(0, 5, 0, 25)
+ToggleButton.Position = UDim2.new(0, 5, 0, 35)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.Text = "Start Auto-Star"
 ToggleButton.Parent = Frame
 
 local AutoCollect = false
+local ScriptRunning = true -- controla loop
+
+-- Fechar GUI
+CloseButton.MouseButton1Click:Connect(function()
+    ScriptRunning = false
+    ScreenGui:Destroy()
+end)
 
 -- Função para encontrar todas as estrelas
 local function findStars(parent)
@@ -40,14 +56,14 @@ local function findStars(parent)
     return stars
 end
 
--- Função para mover gradualmente até a estrela
+-- Função para andar até a estrela gradualmente
 local function walkToStar(star)
     local character = LocalPlayer.Character
     if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then return end
     local hrp = character.HumanoidRootPart
     local humanoid = character.Humanoid
 
-    while (hrp.Position - star.Position).Magnitude > 3 do
+    while (hrp.Position - star.Position).Magnitude > 3 and ScriptRunning do
         local direction = (star.Position - hrp.Position).Unit
         local speed = humanoid.WalkSpeed
         hrp.CFrame = hrp.CFrame + direction * speed * 0.1
@@ -57,7 +73,7 @@ end
 
 -- Loop principal
 spawn(function()
-    while true do
+    while ScriptRunning do
         if AutoCollect then
             local stars = findStars(workspace)
             if #stars > 0 then
