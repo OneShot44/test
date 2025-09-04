@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -23,7 +24,7 @@ ToggleButton.Parent = Frame
 
 local AutoCollect = false
 
--- Função para procurar todas as estrelas recursivamente
+-- Função recursiva para encontrar estrelas
 local function findStars(parent)
     local stars = {}
     for _, obj in pairs(parent:GetChildren()) do
@@ -40,15 +41,32 @@ local function findStars(parent)
     return stars
 end
 
--- Loop de teleporte ultra rápido
-RunService.RenderStepped:Connect(function()
-    if AutoCollect and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local stars = findStars(workspace)
-        for _, star in pairs(stars) do
-            if star and star:IsA("BasePart") then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = star.CFrame + Vector3.new(0, 3, 0)
+-- Função para mover suavemente
+local function moveToPart(part, duration)
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp and part then
+        local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = part.CFrame + Vector3.new(0,3,0)})
+        tween:Play()
+        tween.Completed:Wait()
+    end
+end
+
+-- Loop principal
+spawn(function()
+    while true do
+        if AutoCollect and LocalPlayer.Character then
+            local stars = findStars(workspace)
+            for _, star in pairs(stars) do
+                if star:IsA("BasePart") then
+                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - star.Position).Magnitude
+                    local time = math.clamp(distance/16, 0.5, 2) -- ajusta a velocidade natural
+                    moveToPart(star, time)
+                    wait(math.random(3,6)/10) -- delay aleatório
+                end
             end
         end
+        wait(0.5)
     end
 end)
 
