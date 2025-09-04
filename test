@@ -40,32 +40,30 @@ local function findStars(parent)
     return stars
 end
 
--- Função para mover o personagem naturalmente até uma estrela
-local function moveToStar(star)
+-- Função para mover gradualmente até a estrela
+local function walkToStar(star)
     local character = LocalPlayer.Character
-    if character and character:FindFirstChild("Humanoid") and star then
-        local humanoid = character.Humanoid
-        humanoid:MoveTo(star.Position)
-        -- Espera até chegar próximo da estrela ou timeout
-        local reached = false
-        local timeout = tick() + 5
-        humanoid.MoveToFinished:Wait()
-        while (character.HumanoidRootPart.Position - star.Position).Magnitude > 3 do
-            if tick() > timeout then break end
-            wait(0.1)
-        end
+    if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then return end
+    local hrp = character.HumanoidRootPart
+    local humanoid = character.Humanoid
+
+    while (hrp.Position - star.Position).Magnitude > 3 do
+        local direction = (star.Position - hrp.Position).Unit
+        local speed = humanoid.WalkSpeed
+        hrp.CFrame = hrp.CFrame + direction * speed * 0.1
+        wait(0.05)
     end
 end
 
--- Loop principal semi-automático
+-- Loop principal
 spawn(function()
     while true do
         if AutoCollect then
             local stars = findStars(workspace)
             if #stars > 0 then
-                local star = stars[math.random(1,#stars)] -- escolhe aleatória
-                moveToStar(star)
-                wait(math.random(3,7)/10) -- delay aleatório após coletar
+                local star = stars[math.random(1,#stars)]
+                walkToStar(star)
+                wait(math.random(3,7)/10) -- delay aleatório
             end
         end
         wait(0.5)
