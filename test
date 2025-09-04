@@ -31,7 +31,7 @@ ToggleButton.Text = "Start Auto-Star"
 ToggleButton.Parent = Frame
 
 local AutoCollect = false
-local ScriptRunning = true -- controla loop
+local ScriptRunning = true
 
 -- Fechar GUI
 CloseButton.MouseButton1Click:Connect(function()
@@ -56,7 +56,7 @@ local function findStars(parent)
     return stars
 end
 
--- Função para andar até a estrela gradualmente
+-- Função para andar até a estrela com velocidade normal
 local function walkToStar(star)
     local character = LocalPlayer.Character
     if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then return end
@@ -65,8 +65,10 @@ local function walkToStar(star)
 
     while (hrp.Position - star.Position).Magnitude > 3 and ScriptRunning do
         local direction = (star.Position - hrp.Position).Unit
-        local speed = humanoid.WalkSpeed
-        hrp.CFrame = hrp.CFrame + direction * speed * 0.1
+        -- Simular pequenas variações na direção para parecer humano
+        local randomOffset = Vector3.new(math.random(-2,2)/10,0,math.random(-2,2)/10)
+        local moveVector = (direction + randomOffset).Unit * humanoid.WalkSpeed * 0.05
+        hrp.CFrame = hrp.CFrame + moveVector
         wait(0.05)
     end
 end
@@ -77,9 +79,14 @@ spawn(function()
         if AutoCollect then
             local stars = findStars(workspace)
             if #stars > 0 then
-                local star = stars[math.random(1,#stars)]
-                walkToStar(star)
-                wait(math.random(3,7)/10) -- delay aleatório
+                -- Escolhe a estrela mais próxima
+                table.sort(stars, function(a,b)
+                    return (a.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 
+                           (b.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                end)
+                local nearestStar = stars[1]
+                walkToStar(nearestStar)
+                wait(math.random(5,12)/10) -- delay aleatório após coletar
             end
         end
         wait(0.5)
