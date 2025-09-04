@@ -1,43 +1,27 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- GUI
+-- GUI simples
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 220, 0, 100)
+Frame.Size = UDim2.new(0, 220, 0, 60)
 Frame.Position = UDim2.new(0, 50, 0, 50)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
 
--- Botão fechar "X"
-local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 25, 0, 25)
-CloseButton.Position = UDim2.new(1, -30, 0, 5)
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Text = "X"
-CloseButton.Parent = Frame
-
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(1, -10, 0, 50)
-ToggleButton.Position = UDim2.new(0, 5, 0, 35)
+ToggleButton.Size = UDim2.new(1, -10, 0, 40)
+ToggleButton.Position = UDim2.new(0, 5, 0, 10)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Text = "Start Auto-Star"
+ToggleButton.Text = "Start Max-Star"
 ToggleButton.Parent = Frame
 
 local AutoCollect = false
-local ScriptRunning = true
-
--- Fechar GUI
-CloseButton.MouseButton1Click:Connect(function()
-    ScriptRunning = false
-    ScreenGui:Destroy()
-end)
 
 -- Função para encontrar todas as estrelas
 local function findStars(parent)
@@ -56,45 +40,32 @@ local function findStars(parent)
     return stars
 end
 
--- Função para andar até a estrela com velocidade normal
-local function walkToStar(star)
+-- Função para teletransportar e coletar
+local function collectAllStars()
     local character = LocalPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then return end
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
     local hrp = character.HumanoidRootPart
-    local humanoid = character.Humanoid
 
-    while (hrp.Position - star.Position).Magnitude > 3 and ScriptRunning do
-        local direction = (star.Position - hrp.Position).Unit
-        -- Simular pequenas variações na direção para parecer humano
-        local randomOffset = Vector3.new(math.random(-2,2)/10,0,math.random(-2,2)/10)
-        local moveVector = (direction + randomOffset).Unit * humanoid.WalkSpeed * 0.05
-        hrp.CFrame = hrp.CFrame + moveVector
-        wait(0.05)
+    local stars = findStars(workspace)
+    for _, star in pairs(stars) do
+        if star and star:IsA("BasePart") then
+            hrp.CFrame = star.CFrame + Vector3.new(0,3,0) -- Teleporta acima da estrela
+            wait(0.01) -- Espera mínima para coletar
+        end
     end
 end
-
--- Loop principal
-spawn(function()
-    while ScriptRunning do
-        if AutoCollect then
-            local stars = findStars(workspace)
-            if #stars > 0 then
-                -- Escolhe a estrela mais próxima
-                table.sort(stars, function(a,b)
-                    return (a.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 
-                           (b.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                end)
-                local nearestStar = stars[1]
-                walkToStar(nearestStar)
-                wait(math.random(5,12)/10) -- delay aleatório após coletar
-            end
-        end
-        wait(0.5)
-    end
-end)
 
 -- Botão ligar/desligar
 ToggleButton.MouseButton1Click:Connect(function()
     AutoCollect = not AutoCollect
-    ToggleButton.Text = AutoCollect and "Stop Auto-Star" or "Start Auto-Star"
+    ToggleButton.Text = AutoCollect and "Stop Max-Star" or "Start Max-Star"
+
+    if AutoCollect then
+        spawn(function()
+            while AutoCollect do
+                collectAllStars()
+                wait(0.05) -- loop super rápido
+            end
+        end)
+    end
 end)
