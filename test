@@ -41,7 +41,7 @@ spawn(function()
         if AutoTeleport then
             teleportPlayer()
         end
-        wait(20)
+        wait(25)
     end
 end)
 
